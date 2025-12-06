@@ -1,0 +1,7 @@
+{
+  "name": "MemorialOS",
+  "description": "A comprehensive platform for digital memorials, cemetery management, and AI-assisted support.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
