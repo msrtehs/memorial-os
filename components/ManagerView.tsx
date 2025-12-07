@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Page, Plot, MaintenanceTask, Transaction, PricingItem, SecurityAlert, Cemetery, Profile, Partner, InspectionRecord, LicensingDoc, StockItem } from '../types';
 import { MOCK_CEMETERIES, MOCK_ALERTS } from '../services/dataService';
@@ -10,7 +11,7 @@ import {
   Camera, Droplets, Leaf, CircleDollarSign, 
   ArrowUpRight, Radio, Check, Building2, ChevronDown, 
   BookOpen, Calendar as CalendarIcon, MousePointer2, Clock, Search, Filter, MoreHorizontal, Briefcase, Mail,
-  Bug, Waves, Microscope, Activity, FileText, ArrowRight, Package, ClipboardList, PenTool, Skull, Handshake,
+  Bug, Waves, Microscope, Activity, FileText, ArrowRight, Package, ClipboardList, PenTool, Skull,
   Siren, Eye, Lock, ShoppingCart, Truck
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
@@ -1136,7 +1137,7 @@ const Environmental: React.FC<{
                                             className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100" 
                                             title="Solicitar Parceiro"
                                         >
-                                            <Handshake className="w-4 h-4" />
+                                            <Briefcase className="w-4 h-4" />
                                         </button>
                                     )}
                                 </div>
@@ -1414,8 +1415,14 @@ const ExpertAI: React.FC<{
         const currentSnapshot = generateSystemSnapshot();
 
         try {
-          const apiKey = process.env.API_KEY;
-          if (!apiKey) throw new Error("API Key missing");
+          // Tenta obter a chave de API de várias fontes (Vite, Process ou Window) ou usa a chave fornecida
+          const apiKey = (import.meta as any).env?.VITE_API_KEY || (window as any).process?.env?.API_KEY || process.env.API_KEY || "AIzaSyANrAPGfFwQ5Vg0SU-Px_PeMxVfywUDi3I";
+
+          if (!apiKey) {
+             console.error("ERRO CRÍTICO: API Key não encontrada.");
+             throw new Error("API Key missing");
+          }
+
           const ai = new GoogleGenAI({ apiKey });
           
           const chat = ai.chats.create({
@@ -1444,7 +1451,8 @@ const ExpertAI: React.FC<{
           const response = result.text;
           setMessages(prev => [...prev, { role: 'model', text: response || '' }]);
         } catch (e) {
-          setMessages(prev => [...prev, { role: 'model', text: 'Erro de conexão. Verifique sua chave de API.' }]);
+          console.error("Expert AI Error:", e);
+          setMessages(prev => [...prev, { role: 'model', text: 'Erro de conexão ou Chave de API inválida. Verifique o console.' }]);
         } finally {
           setLoading(false);
         }

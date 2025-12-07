@@ -56,8 +56,13 @@ export const WelcomingAgent: React.FC<WelcomingAgentProps> = ({ isOpen, setIsOpe
     setIsLoading(true);
 
     try {
-      const apiKey = process.env.API_KEY;
-      if (!apiKey) throw new Error("API Key not found");
+      // Tenta obter a chave de API de várias fontes (Vite, Process ou Window) ou usa a chave fornecida
+      const apiKey = (import.meta as any).env?.VITE_API_KEY || (window as any).process?.env?.API_KEY || process.env.API_KEY || "AIzaSyANrAPGfFwQ5Vg0SU-Px_PeMxVfywUDi3I";
+      
+      if (!apiKey) {
+        console.error("ERRO CRÍTICO: API Key não encontrada.");
+        throw new Error("API Key not found");
+      }
 
       const ai = new GoogleGenAI({ apiKey });
       const chat = ai.chats.create({
@@ -96,7 +101,7 @@ export const WelcomingAgent: React.FC<WelcomingAgentProps> = ({ isOpen, setIsOpe
       setMessages(prev => [...prev, { 
         id: Date.now().toString(), 
         role: 'model', 
-        text: "Peço desculpas, minha conexão está instável no momento. Por favor, poderia tentar novamente em alguns instantes?" 
+        text: "Peço desculpas, minha conexão está instável no momento. Por favor, tente novamente." 
       }]);
     } finally {
       setIsLoading(false);
