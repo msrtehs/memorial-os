@@ -1,22 +1,22 @@
 
 import * as firebaseAuth from "firebase/auth";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import * as firebaseStorage from "firebase/storage";
+import * as firebaseFirestore from "firebase/firestore";
 import { auth, googleProvider, storage, db } from "./firebaseConfig";
 import { AppUser } from "../types";
 
-// Extract functions from namespace with any cast to avoid TS errors about missing members
+// Extração segura das funções via Namespace
 const { 
     signInWithPopup, 
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     signOut, 
-    updateProfile, 
+    updateProfile: firebaseUpdateProfile, 
     onAuthStateChanged
 } = firebaseAuth as any;
 
-// Define User type as any since export is reported missing
-type User = any;
+const { ref, uploadBytes, getDownloadURL } = firebaseStorage as any;
+const { doc, setDoc } = firebaseFirestore as any;
 
 // --- AUTHENTICATION FUNCTIONS ---
 
@@ -44,8 +44,7 @@ export const loginWithEmail = async (email: string, pass: string): Promise<AppUs
 export const registerWithEmail = async (email: string, pass: string, name: string): Promise<AppUser> => {
     try {
         const result = await createUserWithEmailAndPassword(auth, email, pass);
-        // Atualizar nome imediatamente
-        await updateProfile(result.user, { displayName: name });
+        await firebaseUpdateProfile(result.user, { displayName: name });
         await syncUserToFirestore(result.user);
         return formatUser(result.user);
     } catch (error) {
@@ -60,7 +59,7 @@ export const logout = async () => {
 // --- PROFILE MANAGEMENT ---
 
 export const updateUserProfile = async (name: string, photoFile?: File): Promise<AppUser | null> => {
-    const user = auth.currentUser;
+    const user = (auth as any).currentUser;
     if (!user) return null;
 
     let photoURL = user.photoURL;
@@ -72,12 +71,11 @@ export const updateUserProfile = async (name: string, photoFile?: File): Promise
         photoURL = await getDownloadURL(storageRef);
     }
 
-    await updateProfile(user, {
+    await firebaseUpdateProfile(user, {
         displayName: name,
         photoURL: photoURL
     });
 
-    // Atualizar no Firestore também para persistência extra
     await syncUserToFirestore(user, { displayName: name, photoURL });
 
     return formatUser(user);
@@ -85,7 +83,7 @@ export const updateUserProfile = async (name: string, photoFile?: File): Promise
 
 // --- HELPERS ---
 
-const syncUserToFirestore = async (user: User, extraData = {}) => {
+const syncUserToFirestore = async (user: any, extraData = {}) => {
     const userRef = doc(db, "users", user.uid);
     const userData = {
         uid: user.uid,
@@ -95,11 +93,10 @@ const syncUserToFirestore = async (user: User, extraData = {}) => {
         lastLogin: new Date().toISOString(),
         ...extraData
     };
-    // setDoc com merge: true atualiza se existir, cria se não existir
     await setDoc(userRef, userData, { merge: true });
 };
 
-const formatUser = (user: User): AppUser => ({
+const formatUser = (user: any): AppUser => ({
     uid: user.uid,
     email: user.email,
     displayName: user.displayName,
@@ -107,7 +104,7 @@ const formatUser = (user: User): AppUser => ({
 });
 
 export const subscribeToAuth = (callback: (user: AppUser | null) => void) => {
-    return onAuthStateChanged(auth, (user: User) => {
+    return onAuthStateChanged(auth, (user: any) => {
         callback(user ? formatUser(user) : null);
     });
 };

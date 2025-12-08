@@ -1,4 +1,3 @@
-
 export enum AppMode {
   USER = 'USER',
   MANAGER = 'MANAGER'
@@ -45,6 +44,7 @@ export interface Cemetery {
 
 export interface Profile {
   id: string;
+  ownerId?: string; // NOVO CAMPO: Identifica o dono do memorial
   name: string;
   dob: string;
   dod: string;
